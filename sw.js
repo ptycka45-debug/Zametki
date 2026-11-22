@@ -1,4 +1,4 @@
-const CACHE_NAME = 'warm-notes-pwa-v1';
+const CACHE_NAME = 'warm-notes-pwa-v2';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
   './manifest.json'
 ];
 
+// Установка Service Worker и предварительное кэширование основных файлов
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -15,6 +16,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// Активация и удаление устаревших версий кэша
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -27,6 +29,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Перехват сетевых запросов (стратегия Stale-While-Revalidate для плавной офлайн-работы)
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
