@@ -1,25 +1,26 @@
 {
-  "name": "Мои заметки — Идеи, Мысли, Планы",
-  "short_name": "Заметки",
-  "description": "Спокойное и быстрое пространство для ваших идей, мыслей и планов",
-  "start_url": "./index.html",
-  "scope": "./",
-  "display": "standalone",
-  "background_color": "#3B2621",
-  "theme_color": "#3B2621",
-  "orientation": "portrait-primary",
-  "icons": [
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%233B2621'/%3E%3Crect x='116' y='88' width='280' height='336' rx='40' fill='%234A312B' stroke='%230A666E' stroke-width='16'/%3E%3Cpath d='M172 172h168M172 236h136M172 300h96' stroke='%23EDE5D2' stroke-width='18' stroke-linecap='round'/%3E%3Ccircle cx='356' cy='332' r='44' fill='%23D9722E'/%3E%3Cpath d='M356 308v48M332 332h48' stroke='%23EDE5D2' stroke-width='10' stroke-linecap='round'/%3E%3C/svg%3E",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%233B2621'/%3E%3Crect x='116' y='88' width='280' height='336' rx='40' fill='%234A312B' stroke='%230A666E' stroke-width='16'/%3E%3Cpath d='M172 172h168M172 236h136M172 300h96' stroke='%23EDE5D2' stroke-width='18' stroke-linecap='round'/%3E%3Ccircle cx='356' cy='332' r='44' fill='%23D9722E'/%3E%3Cpath d='M356 308v48M332 332h48' stroke='%23EDE5D2' stroke-width='10' stroke-linecap='round'/%3E%3C/svg%3E",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
+"id": "./",
+"name": "Мои заметки — Идеи, Мысли, Планы",
+"short_name": "Заметки",
+"description": "Спокойное и быстрое пространство для ваших идей, мыслей и планов",
+"start_url": "./index.html",
+"scope": "./",
+"display": "standalone",
+"background_color": "#3B2621",
+"theme_color": "#3B2621",
+"orientation": "portrait-primary",
+"icons": [
+{
+"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+"sizes": "192x192",
+"type": "image/png",
+"purpose": "any"
+},
+{
+"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+"sizes": "512x512",
+"type": "image/png",
+"purpose": "any"
+}
+]
 }
