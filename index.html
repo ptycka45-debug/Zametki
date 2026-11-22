@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <!-- Запрет случайного масштабирования на мобильных устройствах и учет вырезов экрана -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#3B2621">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Заметки">
+    <meta name="description" content="Спокойное и быстрое пространство для ваших идей, мыслей и планов">
+    <title>Заметки — Идеи, Мысли, Планы</title>
+
+    <!-- Подключение манифеста PWA (будет автоматически обогащен PNG-иконками 192x192 и 512x512 для WebAPK) -->
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json">
+
+    <!-- Встроенная SVG-иконка приложения в новой цветовой палитре -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%233B2621'/%3E%3Crect x='116' y='88' width='280' height='336' rx='40' fill='%234A312B' stroke='%230A666E' stroke-width='16'/%3E%3Cpath d='M172 172h168M172 236h136M172 300h96' stroke='%23EDE5D2' stroke-width='18' stroke-linecap='round'/%3E%3Ccircle cx='356' cy='332' r='44' fill='%23D9722E'/%3E%3Cpath d='M356 308v48M332 332h48' stroke='%23EDE5D2' stroke-width='10' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%233B2621'/%3E%3Crect x='116' y='88' width='280' height='336' rx='40' fill='%234A312B' stroke='%230A666E' stroke-width='16'/%3E%3Cpath d='M172 172h168M172 236h136M172 300h96' stroke='%23EDE5D2' stroke-width='18' stroke-linecap='round'/%3E%3Ccircle cx='356' cy='332' r='44' fill='%23D9722E'/%3E%3Cpath d='M356 308v48M332 332h48' stroke='%23EDE5D2' stroke-width='10' stroke-linecap='round'/%3E%3C/svg%3E">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bgMain: '#3B2621',        /* 1. Глубокий теплый шоколадно-графитовый фон */
+                        bgCard: '#4A312B',        /* Карточки чуть светлее основного фона */
+                        bgCardHover: '#573B34',   /* Карточки при наведении */
+                        bgElevated: '#422B26',    /* Модальные окна */
+                        accentOrange: '#D9722E',  /* 2. Теплый терракотово-оранжевый акцент */
+                        textMain: '#EDE5D2',      /* 3. Мягкий кремовый текст */
+                        accentPeach: '#EBC1AE',   /* 4. Нежно-персиковый акцент */
+                        textMuted: '#ABA4A6',     /* 5. Теплый приглушенный серый */
+                        accentTeal: '#0A666E',    /* 6. Глубокий бирюзовый */
+                        borderSubtle: '#5D4039'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Шрифт Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            background-color: #3B2621;
+            color: #EDE5D2;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overscroll-behavior-y: none;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        input, textarea {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        /* Учет безопасных отступов iPhone (челка и нижняя полоса) */
+        .safe-top {
+            padding-top: max(1rem, env(safe-area-inset-top));
+        }
+        .safe-bottom {
+            padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+        }
+        .fab-bottom {
+            bottom: max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem));
+        }
+        .toast-bottom {
+            bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 5rem));
+        }
+
+        /* Скрытие скроллбара для горизонтальной ленты категорий */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Плавные анимации модальных окон и карточек */
+        .modal-backdrop {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-sheet {
+            transform: translateY(100%);
+            transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-backdrop.active .modal-sheet {
+            transform: translateY(0);
+        }
+
+        @media (min-width: 640px) {
+            .modal-sheet {
+                transform: translateY(20px) scale(0.97);
+                opacity: 0;
+                transition: transform 0.25s ease, opacity 0.25s ease;
+            }
+            .modal-backdrop.active .modal-sheet {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .note-card-anim {
+            animation: fadeSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .line-clamp-4 {
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-accentOrange/30 selection:text-textMain">
+
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ (ШАПКА + ПОИСК + КАТЕГОРИИ) -->
+    <header class="sticky top-0 z-20 bg-bgMain/95 backdrop-blur-md border-b border-borderSubtle/60 safe-top">
+        <div class="max-w-2xl mx-auto px-4 pt-2 pb-3">
+            <!-- Заголовок и кнопки действий -->
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2.5">
+                    <!-- Мини-логотип -->
+                    <div class="w-9 h-9 rounded-xl bg-accentTeal/25 border border-accentTeal/60 flex items-center justify-center shadow-sm">
+                        <svg class="w-5 h-5 text-accentPeach" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-semibold tracking-tight text-textMain leading-tight">Мои заметки</h1>
+                        <p id="notes-counter" class="text-xs text-textMuted">Загрузка...</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <!-- Прямая кнопка установки PWA через beforeinstallprompt (показывается автоматически, когда браузер готов) -->
+                    <button id="btn-direct-install" type="button" aria-label="Установить приложение"
+                        class="hidden px-3 py-2 rounded-xl bg-accentOrange hover:bg-[#E27E3B] active:scale-95 text-textMain shadow-sm transition-all flex items-center gap-1.5 text-xs font-semibold">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Установить</span>
+                    </button>
+
+                    <!-- Кнопка настроек / резервного копирования -->
+                    <button id="btn-settings" type="button" aria-label="Настройки и резервная копия"
+                        class="p-2.5 rounded-xl bg-bgCard hover:bg-bgCardHover active:scale-95 text-textMain border border-borderSubtle/80 transition-all">
+                        <svg class="w-5 h-5 text-textMuted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Строка поиска -->
+            <div class="relative mb-3">
+                <svg class="w-4 h-4 text-textMuted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input id="search-input" type="search" placeholder="Поиск по мыслям, идеям и планам..."
+                    class="w-full bg-bgCard text-textMain placeholder-textMuted/75 text-sm rounded-2xl pl-10 pr-9 py-2.5 border border-borderSubtle/80 focus:outline-none focus:border-accentOrange transition-colors">
+                <button id="btn-clear-search" type="button" aria-label="Очистить поиск"
+                    class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-textMuted hover:text-textMain">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Вкладки фильтрации по категориям -->
+            <nav id="category-tabs" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5" aria-label="Категории заметок">
+                <!-- Генерируется через JS -->
+            </nav>
+        </div>
+    </header>
+
+    <!-- ОСНОВНОЙ СПИСОК ЗАМЕТОК -->
+    <main class="flex-1 max-w-2xl w-full mx-auto px-4 pt-4 pb-28">
+        <!-- Секция закрепленных заметок -->
+        <div id="pinned-section" class="hidden mb-5">
+            <div class="flex items-center gap-1.5 text-xs font-medium text-accentPeach uppercase tracking-wider mb-2.5 px-1">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z" />
+                </svg>
+                <span>Закреплённые</span>
+            </div>
+            <div id="pinned-list" class="grid grid-cols-1 gap-3"></div>
+        </div>
+
+        <!-- Секция обычных заметок -->
+        <div id="regular-section">
+            <div id="regular-header" class="hidden text-xs font-medium text-textMuted uppercase tracking-wider mb-2.5 px-1">
+                Все записи
+            </div>
+            <div id="notes-list" class="grid grid-cols-1 gap-3"></div>
+        </div>
+
+        <!-- Пустое состояние -->
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center text-center py-16 px-4">
+            <div class="w-16 h-16 rounded-2xl bg-bgCard border border-borderSubtle flex items-center justify-center mb-4 text-accentPeach">
+                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="18" x2="12" y2="12"></line>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            <h2 id="empty-title" class="text-base font-medium text-textMain mb-1">Пока здесь тихо</h2>
+            <p id="empty-subtitle" class="text-sm text-textMuted max-w-xs">Нажмите кнопку «+» внизу, чтобы записать первую идею или план.</p>
+        </div>
+    </main>
+
+    <!-- ПЛАВАЮЩАЯ КНОПКА СОЗДАНИЯ ЗАМЕТКИ (FAB в зоне большого пальца) -->
+    <button id="btn-new-note" type="button" aria-label="Создать новую заметку"
+        class="fixed right-5 sm:right-8 fab-bottom z-30 w-14 h-14 rounded-2xl bg-accentOrange hover:bg-[#E27E3B] active:scale-90 text-textMain shadow-lg shadow-black/40 flex items-center justify-center transition-all">
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+    </button>
+
+    <!-- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ (TOAST) С КНОПКОЙ ОТМЕНЫ УДАЛЕНИЯ -->
+    <div id="toast" class="fixed left-4 right-4 sm:left-auto sm:right-8 sm:w-96 toast-bottom z-50 transform translate-y-6 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-bgElevated border border-borderSubtle shadow-xl rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+            <span id="toast-message" class="text-sm text-textMain">Заметка удалена</span>
+            <button id="toast-undo-btn" type="button"
+                class="hidden px-3 py-1.5 rounded-xl bg-accentOrange/25 text-accentPeach hover:bg-accentOrange/35 text-xs font-semibold tracking-wide transition-colors">
+                Отменить
+            </button>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО СОЗДАНИЯ / РЕДАКТИРОВАНИЯ ЗАМЕТКИ -->
+    <div id="editor-modal" class="modal-backdrop fixed inset-0 z-40 bg-black/65 backdrop-blur-xs flex items-end sm:items-center justify-center">
+        <div class="modal-sheet w-full max-w-xl bg-bgElevated border-t sm:border border-borderSubtle rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl safe-bottom">
+            <!-- Верхняя панель редактора -->
+            <div class="flex items-center justify-between px-4 py-3.5 border-b border-borderSubtle/70">
+                <button id="btn-close-editor" type="button" class="p-2 -ml-2 rounded-xl text-textMuted hover:text-textMain active:scale-95 transition-all">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div class="flex items-center gap-2">
+                    <!-- Кнопка закрепления -->
+                    <button id="btn-toggle-pin" type="button" title="Закрепить наверху"
+                        class="p-2.5 rounded-xl border border-borderSubtle bg-bgCard text-textMuted hover:text-textMain active:scale-95 transition-all">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z" />
+                        </svg>
+                    </button>
+
+                    <!-- Кнопка удаления -->
+                    <button id="btn-delete-note" type="button" title="Удалить заметку"
+                        class="hidden p-2.5 rounded-xl border border-borderSubtle bg-bgCard text-accentOrange hover:bg-accentOrange/15 active:scale-95 transition-all">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Кнопка сохранения -->
+                    <button id="btn-save-note" type="button"
+                        class="px-5 py-2.5 rounded-xl bg-accentOrange hover:bg-[#E27E3B] active:scale-95 text-textMain font-semibold text-sm transition-all shadow-sm">
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+
+            <!-- Тело редактора -->
+            <div class="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
+                <!-- Выбор и добавление категории -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-medium text-textMuted">Категория</label>
+                        <span class="text-[11px] text-textMuted/75">Нажмите × на теге, чтобы удалить</span>
+                    </div>
+                    <div id="editor-categories" class="flex flex-wrap items-center gap-2">
+                        <!-- Заполняется через JS -->
+                    </div>
+                    <!-- Быстрое поле добавления новой категории -->
+                    <div id="new-category-form" class="hidden mt-2.5 flex items-center gap-2">
+                        <input id="new-category-input" type="text" maxlength="24" placeholder="Название категории..."
+                            class="flex-1 bg-bgCard text-textMain placeholder-textMuted/60 text-xs rounded-xl px-3 py-2 border border-borderSubtle focus:outline-none focus:border-accentOrange">
+                        <button id="btn-confirm-add-cat" type="button"
+                            class="px-3 py-2 rounded-xl bg-accentTeal text-textMain text-xs font-semibold active:scale-95 transition-all">
+                            Добавить
+                        </button>
+                        <button id="btn-cancel-add-cat" type="button"
+                            class="p-2 rounded-xl bg-bgCard text-textMuted hover:text-textMain border border-borderSubtle text-xs">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Поле заголовка -->
+                <div>
+                    <input id="note-title-input" type="text" placeholder="Заголовок (необязательно)"
+                        class="w-full bg-transparent text-lg font-semibold text-textMain placeholder-textMuted/55 focus:outline-none border-b border-borderSubtle/60 pb-2 focus:border-accentOrange transition-colors">
+                </div>
+
+                <!-- Основной текст -->
+                <div class="flex-1">
+                    <textarea id="note-body-input" rows="8" placeholder="Запишите мысль, идею или план..."
+                        class="w-full bg-transparent text-base text-textMain placeholder-textMuted/55 focus:outline-none resize-none leading-relaxed"></textarea>
+                </div>
+
+                <!-- Метаданные даты создания/изменения -->
+                <div id="note-meta-info" class="text-xs text-textMuted pt-2 border-t border-borderSubtle/50 flex flex-wrap justify-between gap-2">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО НАСТРОЕК И РЕЗЕРВНОГО КОПИРОВАНИЯ -->
+    <div id="settings-modal" class="modal-backdrop fixed inset-0 z-40 bg-black/65 backdrop-blur-xs flex items-end sm:items-center justify-center">
+        <div class="modal-sheet w-full max-w-md bg-bgElevated border-t sm:border border-borderSubtle rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl safe-bottom">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-textMain">Настройки и данные</h2>
+                <button id="btn-close-settings" type="button" class="p-2 -mr-2 rounded-xl text-textMuted hover:text-textMain">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <p class="text-xs text-textMuted leading-relaxed">
+                    Все ваши записи хранятся исключительно в памяти этого устройства (<code class="text-accentPeach">localStorage</code>) и никуда не передаются. Используйте резервное копирование, чтобы перенести заметки на другое устройство.
+                </p>
+
+                <!-- Экспорт в JSON -->
+                <button id="btn-export-json" type="button"
+                    class="w-full flex items-center justify-between p-4 rounded-2xl bg-bgCard hover:bg-bgCardHover active:scale-[0.99] border border-borderSubtle transition-all text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-accentTeal/25 text-accentPeach flex items-center justify-center">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-textMain">Экспорт в JSON</div>
+                            <div class="text-xs text-textMuted">Скачать резервную копию всех заметок</div>
+                        </div>
+                    </div>
+                </button>
+
+                <!-- Импорт из JSON -->
+                <label class="w-full flex items-center justify-between p-4 rounded-2xl bg-bgCard hover:bg-bgCardHover active:scale-[0.99] border border-borderSubtle transition-all cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-accentOrange/20 text-accentOrange flex items-center justify-center">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-textMain">Импорт из JSON</div>
+                            <div class="text-xs text-textMuted">Загрузить заметки из файла копии</div>
+                        </div>
+                    </div>
+                    <input id="input-import-json" type="file" accept=".json,application/json" class="hidden">
+                </label>
+
+                <!-- Управление категориями в настройках -->
+                <div class="pt-3 border-t border-borderSubtle/60 space-y-2.5">
+                    <div class="text-xs font-medium text-textMain">Категории заметок</div>
+                    <div class="flex items-center gap-2">
+                        <input id="settings-new-cat-input" type="text" maxlength="24" placeholder="Новая категория..."
+                            class="flex-1 bg-bgCard text-textMain placeholder-textMuted/60 text-xs rounded-xl px-3 py-2.5 border border-borderSubtle focus:outline-none focus:border-accentOrange">
+                        <button id="btn-settings-add-cat" type="button"
+                            class="px-3.5 py-2.5 rounded-xl bg-accentOrange text-textMain text-xs font-semibold active:scale-95 transition-all">
+                            Добавить
+                        </button>
+                    </div>
+                    <div id="settings-categories-list" class="flex flex-wrap gap-1.5 pt-1"></div>
+                </div>
+
+                <!-- Статус PWA -->
+                <div class="pt-3 border-t border-borderSubtle/60 flex items-center justify-between text-xs text-textMuted">
+                    <span>Автономный режим (Service Worker):</span>
+                    <span id="sw-status" class="font-medium text-accentPeach">Подключается...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * 1. ГЕНЕРАЦИЯ PNG-ИКОНОК ДЛЯ WEBPK, SERVICE WORKER И ПЕРЕХВАТ УСТАНОВКИ PWA
+         * ============================================================================
+         * Chrome на Android собирает полноценное приложение (WebAPK без значка Chrome)
+         * только при наличии растровых PNG-иконок 192x192 и 512x512 в манифесте.
+         */
+        let deferredInstallPrompt = null;
+
+        function generatePngIconDataUrl(size, isMaskable = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const s = size / 512;
+
+            // Фон иконки
+            ctx.fillStyle = '#3B2621';
+            if (isMaskable) {
+                ctx.fillRect(0, 0, size, size);
+            } else {
+                ctx.beginPath();
+                ctx.roundRect(0, 0, size, size, 112 * s);
+                ctx.fill();
+            }
+
+            // Внутренний масштаб для maskable-иконки (безопасная зона 80%)
+            ctx.save();
+            if (isMaskable) {
+                ctx.translate(size * 0.1, size * 0.1);
+                ctx.scale(0.8, 0.8);
+            }
+
+            // Страница блокнота
+            ctx.fillStyle = '#4A312B';
+            ctx.strokeStyle = '#0A666E';
+            ctx.lineWidth = 16 * s;
+            ctx.beginPath();
+            ctx.roundRect(116 * s, 88 * s, 280 * s, 336 * s, 40 * s);
+            ctx.fill();
+            ctx.stroke();
+
+            // Строки текста
+            ctx.strokeStyle = '#EDE5D2';
+            ctx.lineWidth = 18 * s;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(172 * s, 172 * s); ctx.lineTo(340 * s, 172 * s);
+            ctx.moveTo(172 * s, 236 * s); ctx.lineTo(308 * s, 236 * s);
+            ctx.moveTo(172 * s, 300 * s); ctx.lineTo(268 * s, 300 * s);
+            ctx.stroke();
+
+            // Оранжевый круглый значок "+"
+            ctx.fillStyle = '#D9722E';
+            ctx.beginPath();
+            ctx.arc(356 * s, 332 * s, 44 * s, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#EDE5D2';
+            ctx.lineWidth = 10 * s;
+            ctx.beginPath();
+            ctx.moveTo(356 * s, 308 * s); ctx.lineTo(356 * s, 356 * s);
+            ctx.moveTo(332 * s, 332 * s); ctx.lineTo(380 * s, 332 * s);
+            ctx.stroke();
+
+            ctx.restore();
+            return canvas.toDataURL('image/png');
+        }
+
+        // Создаем манифест с настоящими PNG-иконками и абсолютными URL для GitHub Pages
+        (function attachWebApkManifest() {
+            try {
+                const icon192 = generatePngIconDataUrl(192, false);
+                const icon512 = generatePngIconDataUrl(512, false);
+                const icon512Maskable = generatePngIconDataUrl(512, true);
+
+                const pageUrl = new URL('./index.html', window.location.href).href;
+                const scopeUrl = new URL('./', window.location.href).href;
+
+                const manifestObj = {
+                    id: scopeUrl,
+                    name: 'Мои заметки — Идеи, Мысли, Планы',
+                    short_name: 'Заметки',
+                    description: 'Спокойное и быстрое пространство для ваших идей, мыслей и планов',
+                    start_url: pageUrl,
+                    scope: scopeUrl,
+                    display: 'standalone',
+                    background_color: '#3B2621',
+                    theme_color: '#3B2621',
+                    orientation: 'portrait-primary',
+                    icons: [
+                        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+                        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any' },
+                        { src: icon512Maskable, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+                    ]
+                };
+
+                const blob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+                const manifestUrl = URL.createObjectURL(blob);
+                const linkEl = document.getElementById('pwa-manifest');
+                if (linkEl) linkEl.href = manifestUrl;
+
+                const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+                if (appleIcon) appleIcon.href = icon192;
+            } catch (err) {
+                console.warn('Fallback to static manifest.json', err);
+            }
+        })();
+
+        // Перехватываем событие beforeinstallprompt максимально рано, до DOMContentLoaded
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+
+            // Показываем кнопку прямой установки в шапке
+            const directBtn = document.getElementById('btn-direct-install');
+            if (directBtn) directBtn.classList.remove('hidden');
+        });
+
+        // Скрываем кнопку установки, если приложение уже установлено
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            const directBtn = document.getElementById('btn-direct-install');
+            if (directBtn) directBtn.classList.add('hidden');
+            if (typeof showToast === 'function') {
+                showToast('Приложение успешно установлено на экран');
+            }
+        });
+
+        async function triggerNativeInstall() {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            const { outcome } = await deferredInstallPrompt.userChoice;
+            if (outcome === 'accepted') {
+                deferredInstallPrompt = null;
+                document.getElementById('btn-direct-install')?.classList.add('hidden');
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => {
+                        const statusEl = document.getElementById('sw-status');
+                        if (statusEl) statusEl.textContent = 'Активен (Готов к офлайн)';
+                    })
+                    .catch(() => {
+                        const statusEl = document.getElementById('sw-status');
+                        if (statusEl) statusEl.textContent = 'Локальный режим';
+                    });
+            });
+        }
+
+        /**
+         * ============================================================================
+         * 2. КОНСТАНТЫ, ЦВЕТОВЫЕ КАТЕГОРИИ И УПРАВЛЕНИЕ ДАННЫМИ (LOCALSTORAGE)
+         * ============================================================================
+         */
+        const STORAGE_KEY = 'calm_notes_app_data_v1';
+        const CATEGORIES_STORAGE_KEY = 'calm_notes_categories_v1';
+        const INIT_FLAG_KEY = 'calm_notes_initialized_v1';
+
+        const ALL_CATEGORY = { id: 'all', label: 'Все', color: 'text-textMain', badgeBg: 'bg-bgElevated', dot: 'bg-textMuted' };
+
+        const DEFAULT_CATEGORIES = [
+            { id: 'ideas', label: 'Идеи', color: 'text-accentPeach', badgeBg: 'bg-accentTeal/40', dot: 'bg-accentPeach' },
+            { id: 'thoughts', label: 'Мысли', color: 'text-textMain', badgeBg: 'bg-textMuted/25', dot: 'bg-textMuted' },
+            { id: 'plans', label: 'Планы', color: 'text-accentPeach', badgeBg: 'bg-accentPeach/15', dot: 'bg-accentPeach' },
+            { id: 'important', label: 'Важное', color: 'text-[#F5A875]', badgeBg: 'bg-accentOrange/25', dot: 'bg-accentOrange' }
+        ];
+
+        const CATEGORY_PALETTES = [
+            { color: 'text-accentPeach', badgeBg: 'bg-accentTeal/40', dot: 'bg-accentPeach' },
+            { color: 'text-[#F5A875]', badgeBg: 'bg-accentOrange/25', dot: 'bg-accentOrange' },
+            { color: 'text-accentPeach', badgeBg: 'bg-accentPeach/15', dot: 'bg-accentPeach' },
+            { color: 'text-textMain', badgeBg: 'bg-textMuted/25', dot: 'bg-textMuted' }
+        ];
+
+        const WELCOME_NOTES = [
+            {
+                id: 'welcome-1',
+                title: 'Добро пожаловать в ваше тихое пространство',
+                body: 'Здесь нет лишнего шума и отвлекающих уведомлений. Нажмите на оранжевую кнопку «+» в правом нижнем углу, чтобы мгновенно записать новую идею, план или важную мысль.\n\nНажмите на эту карточку, чтобы отредактировать её или удалить.',
+                category: 'ideas',
+                pinned: true,
+                createdAt: Date.now() - 120000,
+                updatedAt: Date.now() - 120000
+            },
+            {
+                id: 'welcome-2',
+                title: 'Как установить на экран и сохранить данные',
+                body: '1. Вы можете добавить это приложение на рабочий стол телефона через меню браузера («На экран Домой» / «Установить приложение»), чтобы открывать его в один тап без интернета.\n2. Все заметки надёжно сохраняются прямо в памяти вашего устройства. В меню настроек (шестерёнка сверху) доступен экспорт в JSON для переноса на другой телефон.',
+                category: 'plans',
+                pinned: false,
+                createdAt: Date.now() - 60000,
+                updatedAt: Date.now() - 60000
+            }
+        ];
+
+        let state = {
+            notes: [],
+            categories: [],
+            activeCategory: 'all',
+            searchQuery: '',
+            editingNoteId: null,
+            editorCategory: 'ideas',
+            editorPinned: false,
+            deletedBackup: null,
+            toastTimer: null,
+            deferredPrompt: null
+        };
+
+        function loadCategories() {
+            try {
+                const raw = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        state.categories = parsed;
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.error('Ошибка чтения категорий:', e);
+            }
+            state.categories = [...DEFAULT_CATEGORIES];
+            saveCategories();
+        }
+
+        function saveCategories() {
+            try {
+                localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(state.categories));
+            } catch (e) {
+                showToast('Не удалось сохранить категории');
+            }
+        }
+
+        function addCategory(label) {
+            const cleanLabel = (label || '').trim();
+            if (!cleanLabel) {
+                showToast('Введите название категории');
+                return null;
+            }
+            const exists = state.categories.find(c => c.label.toLowerCase() === cleanLabel.toLowerCase());
+            if (exists) {
+                showToast('Такая категория уже существует');
+                return exists;
+            }
+            const palette = CATEGORY_PALETTES[state.categories.length % CATEGORY_PALETTES.length];
+            const newCat = {
+                id: 'cat-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+                label: cleanLabel,
+                color: palette.color,
+                badgeBg: palette.badgeBg,
+                dot: palette.dot
+            };
+            state.categories.push(newCat);
+            saveCategories();
+            renderCategoryTabs();
+            renderEditorCategories();
+            renderSettingsCategories();
+            showToast(`Категория «${cleanLabel}» добавлена`);
+            return newCat;
+        }
+
+        function deleteCategory(catId) {
+            if (state.categories.length <= 1) {
+                showToast('Должна остаться хотя бы одна категория');
+                return;
+            }
+            const idx = state.categories.findIndex(c => c.id === catId);
+            if (idx === -1) return;
+
+            const removed = state.categories[idx];
+            state.categories.splice(idx, 1);
+            const fallbackCatId = state.categories[0].id;
+
+            // Переносим заметки из удаленной категории в первую доступную
+            let movedNotes = false;
+            state.notes.forEach(note => {
+                if (note.category === catId) {
+                    note.category = fallbackCatId;
+                    movedNotes = true;
+                }
+            });
+            if (movedNotes) saveNotes();
+
+            if (state.activeCategory === catId) {
+                state.activeCategory = 'all';
+            }
+            if (state.editorCategory === catId) {
+                state.editorCategory = fallbackCatId;
+            }
+
+            saveCategories();
+            renderCategoryTabs();
+            renderEditorCategories();
+            renderSettingsCategories();
+            renderNotes();
+            showToast(`Категория «${removed.label}» удалена`);
+        }
+
+        function loadNotes() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                const isInitialized = localStorage.getItem(INIT_FLAG_KEY);
+
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        state.notes = parsed;
+                        return;
+                    }
+                }
+
+                if (!isInitialized) {
+                    state.notes = [...WELCOME_NOTES];
+                    saveNotes();
+                    localStorage.setItem(INIT_FLAG_KEY, 'true');
+                } else {
+                    state.notes = [];
+                }
+            } catch (e) {
+                console.error('Ошибка чтения localStorage:', e);
+                state.notes = [];
+            }
+        }
+
+        function saveNotes() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state.notes));
+                localStorage.setItem(INIT_FLAG_KEY, 'true');
+            } catch (e) {
+                showToast('Не удалось сохранить: память браузера заполнена');
+            }
+        }
+
+        /**
+         * ============================================================================
+         * 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+         * ============================================================================
+         */
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatDateTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const isToday = date.toDateString() === now.toDateString();
+
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            const isYesterday = date.toDateString() === yesterday.toDateString();
+
+            const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+            if (isToday) return `Сегодня, ${timeStr}`;
+            if (isYesterday) return `Вчера, ${timeStr}`;
+
+            const dateStr = date.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'short',
+                year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+            });
+            return `${dateStr}, ${timeStr}`;
+        }
+
+        function getCategoryObj(catId) {
+            if (catId === 'all') return ALL_CATEGORY;
+            return state.categories.find(c => c.id === catId) || state.categories[0] || ALL_CATEGORY;
+        }
+
+        function showToast(message, canUndo = false) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            const undoBtn = document.getElementById('toast-undo-btn');
+
+            if (state.toastTimer) {
+                clearTimeout(state.toastTimer);
+            }
+
+            msgEl.textContent = message;
+            if (canUndo) {
+                undoBtn.classList.remove('hidden');
+            } else {
+                undoBtn.classList.add('hidden');
+            }
+
+            toast.classList.remove('translate-y-6', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            state.toastTimer = setTimeout(() => {
+                hideToast();
+                state.deletedBackup = null;
+            }, 3500);
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('translate-y-6', 'opacity-0', 'pointer-events-none');
+            toast.classList.remove('translate-y-0', 'opacity-100');
+        }
+
+        /**
+         * ============================================================================
+         * 4. ОТРИСОВКА ИНТЕРФЕЙСА
+         * ============================================================================
+         */
+        function renderCategoryTabs() {
+            const container = document.getElementById('category-tabs');
+            const tabs = [ALL_CATEGORY, ...state.categories];
+            container.innerHTML = tabs.map(cat => {
+                const isActive = state.activeCategory === cat.id;
+                const count = cat.id === 'all'
+                    ? state.notes.length
+                    : state.notes.filter(n => n.category === cat.id).length;
+
+                return `
+                    <button type="button" data-cat="${cat.id}"
+                        class="cat-tab shrink-0 px-3.5 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 active:scale-95 ${
+                            isActive
+                                ? 'bg-accentOrange text-textMain font-semibold shadow-xs'
+                                : 'bg-bgCard text-textMuted hover:text-textMain border border-borderSubtle/70'
+                        }">
+                        ${cat.id !== 'all' ? `<span class="w-2 h-2 rounded-full ${isActive ? 'bg-textMain' : cat.dot}"></span>` : ''}
+                        <span>${escapeHTML(cat.label)}</span>
+                        <span class="text-[11px] opacity-80 ml-0.5">${count}</span>
+                    </button>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.cat-tab').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.activeCategory = btn.dataset.cat;
+                    renderCategoryTabs();
+                    renderNotes();
+                });
+            });
+        }
+
+        function createNoteCardHTML(note) {
+            const cat = getCategoryObj(note.category);
+            const hasTitle = note.title && note.title.trim().length > 0;
+            const dateLabel = formatDateTime(note.updatedAt || note.createdAt);
+
+            return `
+                <article data-id="${note.id}"
+                    class="note-card note-card-anim group relative bg-bgCard hover:bg-bgCardHover active:scale-[0.99] border ${note.pinned ? 'border-accentPeach/50' : 'border-borderSubtle/80'} rounded-2xl p-4 transition-all cursor-pointer shadow-xs">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-medium ${cat.badgeBg} ${cat.color}">
+                            <span class="w-1.5 h-1.5 rounded-full ${cat.dot}"></span>
+                            ${escapeHTML(cat.label)}
+                        </span>
+
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-textMuted">${dateLabel}</span>
+                            ${note.pinned ? `
+                                <span class="text-accentPeach" title="Закреплено">
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z" />
+                                    </svg>
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    ${hasTitle ? `<h3 class="text-base font-semibold text-textMain mb-1.5 leading-snug break-words">${escapeHTML(note.title)}</h3>` : ''}
+                    <p class="text-sm text-textMain/85 leading-relaxed whitespace-pre-line line-clamp-4 break-words">${escapeHTML(note.body)}</p>
+                </article>
+            `;
+        }
+
+        function renderNotes() {
+            const pinnedSection = document.getElementById('pinned-section');
+            const pinnedList = document.getElementById('pinned-list');
+            const regularHeader = document.getElementById('regular-header');
+            const notesList = document.getElementById('notes-list');
+            const emptyState = document.getElementById('empty-state');
+            const counterEl = document.getElementById('notes-counter');
+
+            const total = state.notes.length;
+            const wordForm = getPluralForm(total, ['запись', 'записи', 'записей']);
+            counterEl.textContent = `${total} ${wordForm} в памяти`;
+
+            const query = state.searchQuery.trim().toLowerCase();
+            const filtered = state.notes.filter(note => {
+                const matchesCategory = state.activeCategory === 'all' || note.category === state.activeCategory;
+                if (!matchesCategory) return false;
+
+                if (!query) return true;
+                const inTitle = (note.title || '').toLowerCase().includes(query);
+                const inBody = (note.body || '').toLowerCase().includes(query);
+                return inTitle || inBody;
+            });
+
+            filtered.sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+
+            const pinnedNotes = filtered.filter(n => n.pinned);
+            const regularNotes = filtered.filter(n => !n.pinned);
+
+            if (filtered.length === 0) {
+                pinnedSection.classList.add('hidden');
+                regularHeader.classList.add('hidden');
+                notesList.innerHTML = '';
+                emptyState.classList.remove('hidden');
+
+                const emptyTitle = document.getElementById('empty-title');
+                const emptySub = document.getElementById('empty-subtitle');
+                if (query || state.activeCategory !== 'all') {
+                    emptyTitle.textContent = 'Ничего не найдено';
+                    emptySub.textContent = 'Попробуйте изменить поисковый запрос или выбрать другую категорию.';
+                } else {
+                    emptyTitle.textContent = 'Пока здесь тихо';
+                    emptySub.textContent = 'Нажмите кнопку «+» внизу, чтобы записать первую идею или план.';
+                }
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            if (pinnedNotes.length > 0) {
+                pinnedSection.classList.remove('hidden');
+                pinnedList.innerHTML = pinnedNotes.map(createNoteCardHTML).join('');
+                regularHeader.classList.toggle('hidden', regularNotes.length === 0);
+            } else {
+                pinnedSection.classList.add('hidden');
+                regularHeader.classList.add('hidden');
+            }
+
+            notesList.innerHTML = regularNotes.map(createNoteCardHTML).join('');
+
+            document.querySelectorAll('.note-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    openEditor(card.dataset.id);
+                });
+            });
+        }
+
+        function getPluralForm(n, forms) {
+            n = Math.abs(n) % 100;
+            const n1 = n % 10;
+            if (n > 10 && n < 20) return forms[2];
+            if (n1 > 1 && n1 < 5) return forms[1];
+            if (n1 === 1) return forms[0];
+            return forms[2];
+        }
+
+        /**
+         * ============================================================================
+         * 5. РЕДАКТОР ЗАМЕТОК И УПРАВЛЕНИЕ КАТЕГОРИЯМИ
+         * ============================================================================
+         */
+        function renderEditorCategories() {
+            const container = document.getElementById('editor-categories');
+            if (!container) return;
+
+            const canDelete = state.categories.length > 1;
+            const chipsHtml = state.categories.map(cat => {
+                const isSelected = state.editorCategory === cat.id;
+                return `
+                    <div class="inline-flex items-center rounded-xl transition-all ${
+                        isSelected
+                            ? `${cat.badgeBg} ${cat.color} ring-1 ring-current font-semibold`
+                            : 'bg-bgCard text-textMuted hover:text-textMain border border-borderSubtle'
+                    }">
+                        <button type="button" data-cat="${cat.id}"
+                            class="editor-cat-btn pl-3.5 ${canDelete ? 'pr-1.5' : 'pr-3.5'} py-2 text-xs font-medium flex items-center gap-1.5 active:scale-95">
+                            <span class="w-2 h-2 rounded-full ${cat.dot}"></span>
+                            <span>${escapeHTML(cat.label)}</span>
+                        </button>
+                        ${canDelete ? `
+                            <button type="button" data-del-cat="${cat.id}" title="Удалить категорию"
+                                class="del-editor-cat-btn pr-2.5 pl-1 py-2 text-[11px] opacity-65 hover:opacity-100 active:scale-90">
+                                ✕
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            const addBtnHtml = `
+                <button type="button" id="btn-show-add-cat"
+                    class="px-3 py-2 rounded-xl text-xs font-medium bg-bgCard hover:bg-bgCardHover text-accentPeach border border-dashed border-accentPeach/50 flex items-center gap-1 active:scale-95 transition-all">
+                    <span>+ Категория</span>
+                </button>
+            `;
+
+            container.innerHTML = chipsHtml + addBtnHtml;
+
+            container.querySelectorAll('.editor-cat-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.editorCategory = btn.dataset.cat;
+                    renderEditorCategories();
+                });
+            });
+
+            container.querySelectorAll('.del-editor-cat-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteCategory(btn.dataset.delCat);
+                });
+            });
+
+            const showAddBtn = document.getElementById('btn-show-add-cat');
+            if (showAddBtn) {
+                showAddBtn.addEventListener('click', () => {
+                    const form = document.getElementById('new-category-form');
+                    const input = document.getElementById('new-category-input');
+                    form.classList.remove('hidden');
+                    input.value = '';
+                    input.focus();
+                });
+            }
+        }
+
+        function renderSettingsCategories() {
+            const listEl = document.getElementById('settings-categories-list');
+            if (!listEl) return;
+            const canDelete = state.categories.length > 1;
+            listEl.innerHTML = state.categories.map(cat => `
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs ${cat.badgeBg} ${cat.color}">
+                    <span class="w-1.5 h-1.5 rounded-full ${cat.dot}"></span>
+                    <span>${escapeHTML(cat.label)}</span>
+                    ${canDelete ? `
+                        <button type="button" data-del-settings-cat="${cat.id}" title="Удалить категорию"
+                            class="ml-0.5 opacity-70 hover:opacity-100 text-[11px]">✕</button>
+                    ` : ''}
+                </span>
+            `).join('');
+
+            listEl.querySelectorAll('[data-del-settings-cat]').forEach(btn => {
+                btn.addEventListener('click', () => deleteCategory(btn.dataset.delSettingsCat));
+            });
+        }
+
+        function updatePinButtonUI() {
+            const pinBtn = document.getElementById('btn-toggle-pin');
+            if (state.editorPinned) {
+                pinBtn.classList.add('text-accentPeach', 'border-accentPeach/60', 'bg-accentPeach/15');
+                pinBtn.classList.remove('text-textMuted', 'bg-bgCard');
+            } else {
+                pinBtn.classList.remove('text-accentPeach', 'border-accentPeach/60', 'bg-accentPeach/15');
+                pinBtn.classList.add('text-textMuted', 'bg-bgCard');
+            }
+        }
+
+        function openEditor(noteId = null) {
+            const modal = document.getElementById('editor-modal');
+            const titleInput = document.getElementById('note-title-input');
+            const bodyInput = document.getElementById('note-body-input');
+            const deleteBtn = document.getElementById('btn-delete-note');
+            const metaInfo = document.getElementById('note-meta-info');
+            const newCatForm = document.getElementById('new-category-form');
+
+            if (newCatForm) newCatForm.classList.add('hidden');
+            state.editingNoteId = noteId;
+            const defaultCatId = state.categories[0]?.id || 'ideas';
+
+            if (noteId) {
+                const note = state.notes.find(n => n.id === noteId);
+                if (!note) return;
+
+                titleInput.value = note.title || '';
+                bodyInput.value = note.body || '';
+                const catExists = state.categories.some(c => c.id === note.category);
+                state.editorCategory = catExists ? note.category : defaultCatId;
+                state.editorPinned = Boolean(note.pinned);
+
+                deleteBtn.classList.remove('hidden');
+                metaInfo.innerHTML = `
+                    <span>Создано: ${formatDateTime(note.createdAt)}</span>
+                    ${note.updatedAt && note.updatedAt !== note.createdAt ? `<span>Изменено: ${formatDateTime(note.updatedAt)}</span>` : ''}
+                `;
+            } else {
+                titleInput.value = '';
+                bodyInput.value = '';
+                state.editorCategory = state.activeCategory !== 'all' ? state.activeCategory : defaultCatId;
+                state.editorPinned = false;
+
+                deleteBtn.classList.add('hidden');
+                metaInfo.innerHTML = `<span>Новая запись • ${formatDateTime(Date.now())}</span>`;
+            }
+
+            renderEditorCategories();
+            updatePinButtonUI();
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            if (!noteId) {
+                setTimeout(() => bodyInput.focus(), 180);
+            }
+        }
+
+        function closeEditor() {
+            const modal = document.getElementById('editor-modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            state.editingNoteId = null;
+        }
+
+        function saveCurrentNote() {
+            const title = document.getElementById('note-title-input').value.trim();
+            const body = document.getElementById('note-body-input').value.trim();
+
+            if (!title && !body) {
+                showToast('Введите текст заметки перед сохранением');
+                document.getElementById('note-body-input').focus();
+                return;
+            }
+
+            const now = Date.now();
+
+            if (state.editingNoteId) {
+                const index = state.notes.findIndex(n => n.id === state.editingNoteId);
+                if (index !== -1) {
+                    state.notes[index] = {
+                        ...state.notes[index],
+                        title,
+                        body,
+                        category: state.editorCategory,
+                        pinned: state.editorPinned,
+                        updatedAt: now
+                    };
+                }
+                showToast('Изменения сохранены');
+            } else {
+                const newNote = {
+                    id: 'note-' + now + '-' + Math.random().toString(36).substring(2, 7),
+                    title,
+                    body,
+                    category: state.editorCategory,
+                    pinned: state.editorPinned,
+                    createdAt: now,
+                    updatedAt: now
+                };
+                state.notes.unshift(newNote);
+                showToast('Заметка добавлена');
+            }
+
+            saveNotes();
+            renderCategoryTabs();
+            renderNotes();
+            closeEditor();
+        }
+
+        function deleteCurrentNote() {
+            if (!state.editingNoteId) return;
+
+            const index = state.notes.findIndex(n => n.id === state.editingNoteId);
+            if (index === -1) return;
+
+            state.deletedBackup = {
+                note: { ...state.notes[index] },
+                index
+            };
+
+            state.notes.splice(index, 1);
+            saveNotes();
+            renderCategoryTabs();
+            renderNotes();
+            closeEditor();
+
+            showToast('Заметка удалена', true);
+        }
+
+        function undoDelete() {
+            if (!state.deletedBackup) return;
+            const { note, index } = state.deletedBackup;
+            state.notes.splice(Math.min(index, state.notes.length), 0, note);
+            state.deletedBackup = null;
+
+            saveNotes();
+            renderCategoryTabs();
+            renderNotes();
+            hideToast();
+            showToast('Заметка восстановлена');
+        }
+
+        /**
+         * ============================================================================
+         * 6. ЭКСПОРТ И ИМПОРТ В JSON
+         * ============================================================================
+         */
+        function exportToJSON() {
+            const payload = {
+                app: 'CalmNotesPWA',
+                version: 2,
+                exportedAt: new Date().toISOString(),
+                categories: state.categories,
+                notes: state.notes
+            };
+
+            const jsonStr = JSON.stringify(payload, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const dateStamp = new Date().toISOString().slice(0, 10);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `notes-backup-${dateStamp}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Файл резервной копии скачан');
+        }
+
+        function importFromJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const importedNotes = Array.isArray(parsed) ? parsed : parsed.notes;
+
+                    if (!Array.isArray(importedNotes)) {
+                        throw new Error('Неверный формат файла');
+                    }
+
+                    // Если в файле сохранены пользовательские категории, восстанавливаем их
+                    if (Array.isArray(parsed.categories)) {
+                        const existingCatIds = new Set(state.categories.map(c => c.id));
+                        parsed.categories.forEach(c => {
+                            if (c && c.id && c.label && !existingCatIds.has(c.id)) {
+                                const palette = CATEGORY_PALETTES[state.categories.length % CATEGORY_PALETTES.length];
+                                state.categories.push({
+                                    id: String(c.id),
+                                    label: String(c.label),
+                                    color: c.color || palette.color,
+                                    badgeBg: c.badgeBg || palette.badgeBg,
+                                    dot: c.dot || palette.dot
+                                });
+                            }
+                        });
+                        saveCategories();
+                    }
+
+                    const existingIds = new Set(state.notes.map(n => n.id));
+                    const defaultCatId = state.categories[0]?.id || 'ideas';
+                    let addedCount = 0;
+
+                    importedNotes.forEach(item => {
+                        if (item && (item.body || item.title)) {
+                            const id = item.id && !existingIds.has(item.id)
+                                ? item.id
+                                : 'imp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
+
+                            state.notes.push({
+                                id,
+                                title: String(item.title || ''),
+                                body: String(item.body || ''),
+                                category: state.categories.some(c => c.id === item.category) ? item.category : defaultCatId,
+                                pinned: Boolean(item.pinned),
+                                createdAt: Number(item.createdAt) || Date.now(),
+                                updatedAt: Number(item.updatedAt) || Date.now()
+                            });
+                            addedCount++;
+                        }
+                    });
+
+                    saveNotes();
+                    renderCategoryTabs();
+                    renderSettingsCategories();
+                    renderNotes();
+                    closeModal('settings-modal');
+                    showToast(`Импортировано заметок: ${addedCount}`);
+                } catch (err) {
+                    showToast('Ошибка: поврежденный или неверный JSON-файл');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        /**
+         * ============================================================================
+         * 7. ИНИЦИАЛИЗАЦИЯ СОБЫТИЙ
+         * ============================================================================
+         */
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCategories();
+            loadNotes();
+            renderCategoryTabs();
+            renderSettingsCategories();
+            renderNotes();
+
+            document.getElementById('btn-new-note').addEventListener('click', () => openEditor(null));
+            document.getElementById('btn-close-editor').addEventListener('click', closeEditor);
+            document.getElementById('btn-save-note').addEventListener('click', saveCurrentNote);
+            document.getElementById('btn-delete-note').addEventListener('click', deleteCurrentNote);
+            document.getElementById('btn-toggle-pin').addEventListener('click', () => {
+                state.editorPinned = !state.editorPinned;
+                updatePinButtonUI();
+            });
+
+            // Добавление новой категории из редактора
+            const newCatInput = document.getElementById('new-category-input');
+            const newCatForm = document.getElementById('new-category-form');
+            document.getElementById('btn-confirm-add-cat').addEventListener('click', () => {
+                const created = addCategory(newCatInput.value);
+                if (created) {
+                    state.editorCategory = created.id;
+                    renderEditorCategories();
+                    newCatForm.classList.add('hidden');
+                    newCatInput.value = '';
+                }
+            });
+            document.getElementById('btn-cancel-add-cat').addEventListener('click', () => {
+                newCatForm.classList.add('hidden');
+                newCatInput.value = '';
+            });
+            newCatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('btn-confirm-add-cat').click();
+                }
+            });
+
+            // Добавление новой категории из настроек
+            const settingsCatInput = document.getElementById('settings-new-cat-input');
+            document.getElementById('btn-settings-add-cat').addEventListener('click', () => {
+                if (addCategory(settingsCatInput.value)) {
+                    settingsCatInput.value = '';
+                }
+            });
+            settingsCatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('btn-settings-add-cat').click();
+                }
+            });
+
+            document.getElementById('toast-undo-btn').addEventListener('click', undoDelete);
+
+            const searchInput = document.getElementById('search-input');
+            const clearSearchBtn = document.getElementById('btn-clear-search');
+
+            searchInput.addEventListener('input', (e) => {
+                state.searchQuery = e.target.value;
+                clearSearchBtn.classList.toggle('hidden', state.searchQuery.length === 0);
+                renderNotes();
+            });
+
+            clearSearchBtn.addEventListener('click', () => {
+                state.searchQuery = '';
+                searchInput.value = '';
+                clearSearchBtn.classList.add('hidden');
+                renderNotes();
+                searchInput.focus();
+            });
+
+            document.getElementById('btn-settings').addEventListener('click', () => {
+                renderSettingsCategories();
+                openModal('settings-modal');
+            });
+            document.getElementById('btn-close-settings').addEventListener('click', () => closeModal('settings-modal'));
+            document.getElementById('btn-export-json').addEventListener('click', exportToJSON);
+            document.getElementById('input-import-json').addEventListener('change', importFromJSON);
+
+            // Привязка системного окна установки PWA к кнопке в шапке
+            const directInstallBtn = document.getElementById('btn-direct-install');
+            if (deferredInstallPrompt) {
+                directInstallBtn.classList.remove('hidden');
+            }
+            directInstallBtn.addEventListener('click', triggerNativeInstall);
+
+            ['editor-modal', 'settings-modal'].forEach(modalId => {
+                const el = document.getElementById(modalId);
+                el.addEventListener('click', (e) => {
+                    if (e.target === el) {
+                        if (modalId === 'editor-modal') closeEditor();
+                        else closeModal(modalId);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
