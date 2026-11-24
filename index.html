@@ -65,9 +65,33 @@
             -webkit-user-select: none;
         }
 
-        input, textarea {
+        input, textarea, [contenteditable="true"] {
             user-select: text;
             -webkit-user-select: text;
+        }
+
+        /* Placeholder для contenteditable редактора */
+        [contenteditable="true"]:empty:before {
+            content: attr(data-placeholder);
+            color: rgba(171, 164, 166, 0.55);
+            pointer-events: none;
+            display: block;
+        }
+
+        /* Стили форматированного текста внутри заметок */
+        .rich-text-content b,
+        .rich-text-content strong {
+            font-weight: 700;
+            color: #F7F1E5;
+        }
+        .rich-text-content i,
+        .rich-text-content em {
+            font-style: italic;
+        }
+        .rich-text-content u {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            text-decoration-color: #EBC1AE;
         }
 
         /* Учет безопасных отступов iPhone (челка и нижняя полоса) */
@@ -340,15 +364,83 @@
                         class="w-full bg-transparent text-lg font-semibold text-textMain placeholder-textMuted/55 focus:outline-none border-b border-borderSubtle/60 pb-2 focus:border-accentOrange transition-colors">
                 </div>
 
-                <!-- Основной текст -->
+                <!-- Панель форматирования текста и добавления фото -->
+                <div class="flex items-center justify-between gap-2 bg-bgCard/90 border border-borderSubtle/80 rounded-xl px-2 py-1.5">
+                    <div class="flex items-center gap-1">
+                        <button type="button" id="btn-format-bold" title="Жирный (Ctrl+B)"
+                            class="w-9 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-textMain hover:bg-bgCardHover active:scale-95 transition-all">
+                            B
+                        </button>
+                        <button type="button" id="btn-format-italic" title="Курсив (Ctrl+I)"
+                            class="w-9 h-8 rounded-lg flex items-center justify-center text-sm italic font-serif text-textMain hover:bg-bgCardHover active:scale-95 transition-all">
+                            I
+                        </button>
+                        <button type="button" id="btn-format-underline" title="Подчёркнутый (Ctrl+U)"
+                            class="w-9 h-8 rounded-lg flex items-center justify-center text-sm underline underline-offset-2 text-textMain hover:bg-bgCardHover active:scale-95 transition-all">
+                            U
+                        </button>
+                    </div>
+
+                    <!-- Кнопка прикрепления одного или нескольких фото -->
+                    <label for="note-photo-input"
+                        class="cursor-pointer px-3 py-1.5 rounded-lg bg-accentTeal/30 hover:bg-accentTeal/45 border border-accentTeal/60 text-accentPeach text-xs font-medium flex items-center gap-1.5 active:scale-95 transition-all">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span>Фото</span>
+                    </label>
+                    <input id="note-photo-input" type="file" accept="image/*" multiple class="hidden">
+                </div>
+
+                <!-- Предпросмотр прикреплённых фото в редакторе -->
+                <div id="editor-photo-preview-wrap" class="hidden flex flex-wrap gap-3 pt-1"></div>
+
+                <!-- Основной текст (с поддержкой жирного, курсива и подчёркивания) -->
                 <div class="flex-1">
-                    <textarea id="note-body-input" rows="8" placeholder="Запишите мысль, идею или план..."
-                        class="w-full bg-transparent text-base text-textMain placeholder-textMuted/55 focus:outline-none resize-none leading-relaxed"></textarea>
+                    <div id="note-body-input" contenteditable="true" data-placeholder="Запишите мысль, идею или план..."
+                        class="rich-text-content w-full min-h-[160px] bg-transparent text-base text-textMain focus:outline-none leading-relaxed break-words"></div>
                 </div>
 
                 <!-- Метаданные даты создания/изменения -->
                 <div id="note-meta-info" class="text-xs text-textMuted pt-2 border-t border-borderSubtle/50 flex flex-wrap justify-between gap-2">
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ПРОСМОТРА УВЕЛИЧЕННОГО ФОТО (LIGHTBOX) -->
+    <div id="photo-lightbox-modal" class="modal-backdrop fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="relative max-w-3xl w-full flex flex-col items-center">
+            <div class="w-full flex items-center justify-between mb-3 px-1">
+                <span id="lightbox-counter" class="text-xs font-medium text-textMain/80 bg-bgCard/80 px-3 py-1.5 rounded-full border border-borderSubtle/70 hidden">1 / 1</span>
+                <button id="btn-close-lightbox" type="button" aria-label="Закрыть фото"
+                    class="ml-auto p-2.5 rounded-full bg-bgCard/90 hover:bg-bgCardHover text-textMain border border-borderSubtle active:scale-95 transition-all">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="relative w-full flex items-center justify-center">
+                <button id="btn-lightbox-prev" type="button" aria-label="Предыдущее фото"
+                    class="hidden absolute left-2 z-10 p-2.5 rounded-full bg-bgCard/90 hover:bg-bgCardHover text-textMain border border-borderSubtle shadow-lg active:scale-95 transition-all">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+
+                <img id="lightbox-photo-img" src="" alt="Фото из заметки"
+                    class="max-w-full max-h-[78vh] object-contain rounded-2xl border border-borderSubtle/70 shadow-2xl">
+
+                <button id="btn-lightbox-next" type="button" aria-label="Следующее фото"
+                    class="hidden absolute right-2 z-10 p-2.5 rounded-full bg-bgCard/90 hover:bg-bgCardHover text-textMain border border-borderSubtle shadow-lg active:scale-95 transition-all">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
@@ -435,8 +527,6 @@
          * ============================================================================
          * 1. ГЕНЕРАЦИЯ PNG-ИКОНОК ДЛЯ WEBPK, SERVICE WORKER И ПЕРЕХВАТ УСТАНОВКИ PWA
          * ============================================================================
-         * Chrome на Android собирает полноценное приложение (WebAPK без значка Chrome)
-         * только при наличии растровых PNG-иконок 192x192 и 512x512 в манифесте.
          */
         let deferredInstallPrompt = null;
 
@@ -447,7 +537,6 @@
             const ctx = canvas.getContext('2d');
             const s = size / 512;
 
-            // Фон иконки
             ctx.fillStyle = '#3B2621';
             if (isMaskable) {
                 ctx.fillRect(0, 0, size, size);
@@ -457,14 +546,12 @@
                 ctx.fill();
             }
 
-            // Внутренний масштаб для maskable-иконки (безопасная зона 80%)
             ctx.save();
             if (isMaskable) {
                 ctx.translate(size * 0.1, size * 0.1);
                 ctx.scale(0.8, 0.8);
             }
 
-            // Страница блокнота
             ctx.fillStyle = '#4A312B';
             ctx.strokeStyle = '#0A666E';
             ctx.lineWidth = 16 * s;
@@ -473,7 +560,6 @@
             ctx.fill();
             ctx.stroke();
 
-            // Строки текста
             ctx.strokeStyle = '#EDE5D2';
             ctx.lineWidth = 18 * s;
             ctx.lineCap = 'round';
@@ -483,7 +569,6 @@
             ctx.moveTo(172 * s, 300 * s); ctx.lineTo(268 * s, 300 * s);
             ctx.stroke();
 
-            // Оранжевый круглый значок "+"
             ctx.fillStyle = '#D9722E';
             ctx.beginPath();
             ctx.arc(356 * s, 332 * s, 44 * s, 0, Math.PI * 2);
@@ -500,7 +585,6 @@
             return canvas.toDataURL('image/png');
         }
 
-        // Создаем манифест с настоящими PNG-иконками и абсолютными URL для GitHub Pages
         (function attachWebApkManifest() {
             try {
                 const icon192 = generatePngIconDataUrl(192, false);
@@ -540,17 +624,13 @@
             }
         })();
 
-        // Перехватываем событие beforeinstallprompt максимально рано, до DOMContentLoaded
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredInstallPrompt = e;
-
-            // Показываем кнопку прямой установки в шапке
             const directBtn = document.getElementById('btn-direct-install');
             if (directBtn) directBtn.classList.remove('hidden');
         });
 
-        // Скрываем кнопку установки, если приложение уже установлено
         window.addEventListener('appinstalled', () => {
             deferredInstallPrompt = null;
             const directBtn = document.getElementById('btn-direct-install');
@@ -622,8 +702,9 @@
             {
                 id: 'welcome-1',
                 title: 'Добро пожаловать в ваше тихое пространство',
-                body: 'Здесь нет лишнего шума и отвлекающих уведомлений. Нажмите на оранжевую кнопку «+» в правом нижнем углу, чтобы мгновенно записать новую идею, план или важную мысль.\n\nНажмите на эту карточку, чтобы отредактировать её или удалить.',
+                body: 'Здесь нет лишнего шума и отвлекающих уведомлений. Вы можете выделять важное <b>жирным</b>, <i>курсивом</i> или <u>подчёркиванием</u>, а также прикреплять сразу несколько фотографий.<br><br>Нажмите на эту карточку, чтобы отредактировать её или удалить.',
                 category: 'ideas',
+                images: [],
                 pinned: true,
                 createdAt: Date.now() - 120000,
                 updatedAt: Date.now() - 120000
@@ -631,8 +712,9 @@
             {
                 id: 'welcome-2',
                 title: 'Как установить на экран и сохранить данные',
-                body: '1. Вы можете добавить это приложение на рабочий стол телефона через меню браузера («На экран Домой» / «Установить приложение»), чтобы открывать его в один тап без интернета.\n2. Все заметки надёжно сохраняются прямо в памяти вашего устройства. В меню настроек (шестерёнка сверху) доступен экспорт в JSON для переноса на другой телефон.',
+                body: '1. Вы можете добавить это приложение на рабочий стол телефона через меню браузера («На экран Домой» / «Установить приложение»), чтобы открывать его в один тап без интернета.<br>2. Все заметки надёжно сохраняются прямо в памяти вашего устройства. В меню настроек (шестерёнка сверху) доступен экспорт в JSON для переноса на другой телефон.',
                 category: 'plans',
+                images: [],
                 pinned: false,
                 createdAt: Date.now() - 60000,
                 updatedAt: Date.now() - 60000
@@ -647,10 +729,27 @@
             editingNoteId: null,
             editorCategory: 'ideas',
             editorPinned: false,
+            editorPhotos: [],
+            lightboxImages: [],
+            lightboxIndex: 0,
             deletedBackup: null,
             toastTimer: null,
             deferredPrompt: null
         };
+
+        /**
+         * Извлекает массив фотографий из заметки (с обратной совместимостью со старым полем note.image)
+         */
+        function getNoteImages(note) {
+            if (!note) return [];
+            if (Array.isArray(note.images) && note.images.length > 0) {
+                return note.images;
+            }
+            if (typeof note.image === 'string' && note.image.length > 0) {
+                return [note.image];
+            }
+            return [];
+        }
 
         function loadCategories() {
             try {
@@ -717,7 +816,6 @@
             state.categories.splice(idx, 1);
             const fallbackCatId = state.categories[0].id;
 
-            // Переносим заметки из удаленной категории в первую доступную
             let movedNotes = false;
             state.notes.forEach(note => {
                 if (note.category === catId) {
@@ -772,24 +870,225 @@
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state.notes));
                 localStorage.setItem(INIT_FLAG_KEY, 'true');
+                return true;
             } catch (e) {
                 showToast('Не удалось сохранить: память браузера заполнена');
+                return false;
             }
         }
 
         /**
          * ============================================================================
-         * 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+         * 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (ФОРМАТИРОВАНИЕ, ФОТО, ЭКРАНИРОВАНИЕ)
          * ============================================================================
          */
+        function compressImageFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_SIDE = 960;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height && width > MAX_SIDE) {
+                            height = Math.round(height * (MAX_SIDE / width));
+                            width = MAX_SIDE;
+                        } else if (height >= width && height > MAX_SIDE) {
+                            width = Math.round(width * (MAX_SIDE / height));
+                            height = MAX_SIDE;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        resolve(canvas.toDataURL('image/jpeg', 0.76));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handlePhotoUpload(event) {
+            const files = Array.from(event.target.files || []);
+            event.target.value = '';
+            if (files.length === 0) return;
+
+            const imageFiles = files.filter(f => f.type.startsWith('image/'));
+            if (imageFiles.length === 0) {
+                showToast('Пожалуйста, выберите файлы изображений');
+                return;
+            }
+
+            const MAX_PHOTOS_PER_NOTE = 10;
+            const availableSlots = MAX_PHOTOS_PER_NOTE - state.editorPhotos.length;
+            if (availableSlots <= 0) {
+                showToast(`Можно прикрепить не более ${MAX_PHOTOS_PER_NOTE} фото к одной заметке`);
+                return;
+            }
+
+            const filesToProcess = imageFiles.slice(0, availableSlots);
+            if (imageFiles.length > availableSlots) {
+                showToast(`Добавлено только ${availableSlots} фото (максимум ${MAX_PHOTOS_PER_NOTE})`);
+            }
+
+            try {
+                const compressedList = await Promise.all(filesToProcess.map(compressImageFile));
+                state.editorPhotos.push(...compressedList);
+                updateEditorPhotoUI();
+            } catch (err) {
+                showToast('Не удалось обработать одно из изображений');
+            }
+        }
+
+        function updateEditorPhotoUI() {
+            const wrap = document.getElementById('editor-photo-preview-wrap');
+            if (!state.editorPhotos || state.editorPhotos.length === 0) {
+                wrap.innerHTML = '';
+                wrap.classList.add('hidden');
+                return;
+            }
+
+            wrap.classList.remove('hidden');
+            wrap.innerHTML = state.editorPhotos.map((src, idx) => `
+                <div class="relative inline-block">
+                    <img src="${src}" data-preview-idx="${idx}" alt="Фото ${idx + 1}"
+                        class="editor-photo-thumb w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border border-borderSubtle shadow-md cursor-pointer">
+                    <button type="button" data-remove-idx="${idx}" title="Удалить фото"
+                        class="editor-remove-photo-btn absolute -top-2 -right-2 w-6 h-6 rounded-full bg-accentOrange text-textMain shadow-md flex items-center justify-center text-xs font-bold active:scale-90 transition-transform">
+                        ✕
+                    </button>
+                </div>
+            `).join('');
+
+            wrap.querySelectorAll('.editor-photo-thumb').forEach(imgEl => {
+                imgEl.addEventListener('click', () => {
+                    const idx = Number(imgEl.dataset.previewIdx) || 0;
+                    openPhotoLightbox(state.editorPhotos, idx);
+                });
+            });
+
+            wrap.querySelectorAll('.editor-remove-photo-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = Number(btn.dataset.removeIdx);
+                    state.editorPhotos.splice(idx, 1);
+                    updateEditorPhotoUI();
+                });
+            });
+        }
+
+        function updateLightboxUI() {
+            const img = document.getElementById('lightbox-photo-img');
+            const counter = document.getElementById('lightbox-counter');
+            const prevBtn = document.getElementById('btn-lightbox-prev');
+            const nextBtn = document.getElementById('btn-lightbox-next');
+
+            const total = state.lightboxImages.length;
+            if (total === 0) return;
+
+            img.src = state.lightboxImages[state.lightboxIndex];
+
+            if (total > 1) {
+                counter.textContent = `${state.lightboxIndex + 1} / ${total}`;
+                counter.classList.remove('hidden');
+                prevBtn.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+            } else {
+                counter.classList.add('hidden');
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+            }
+        }
+
+        function openPhotoLightbox(imagesOrSrc, startIndex = 0) {
+            const list = Array.isArray(imagesOrSrc) ? imagesOrSrc : (imagesOrSrc ? [imagesOrSrc] : []);
+            if (list.length === 0) return;
+
+            state.lightboxImages = list;
+            state.lightboxIndex = Math.max(0, Math.min(startIndex, list.length - 1));
+            updateLightboxUI();
+
+            const modal = document.getElementById('photo-lightbox-modal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function stepPhotoLightbox(delta) {
+            const total = state.lightboxImages.length;
+            if (total <= 1) return;
+            state.lightboxIndex = (state.lightboxIndex + delta + total) % total;
+            updateLightboxUI();
+        }
+
+        function closePhotoLightbox() {
+            const modal = document.getElementById('photo-lightbox-modal');
+            modal.classList.remove('active');
+            if (!document.getElementById('editor-modal').classList.contains('active')) {
+                document.body.style.overflow = '';
+            }
+            setTimeout(() => {
+                document.getElementById('lightbox-photo-img').src = '';
+                state.lightboxImages = [];
+            }, 250);
+        }
+
         function escapeHTML(str) {
             if (!str) return '';
-            return str
+            return String(str)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        function sanitizeRichHTML(html) {
+            if (!html) return '';
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+
+            const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'BR', 'DIV', 'P', 'SPAN']);
+
+            function cleanNode(node) {
+                const children = Array.from(node.childNodes);
+                children.forEach(child => {
+                    if (child.nodeType === Node.ELEMENT_NODE) {
+                        if (!allowedTags.has(child.tagName)) {
+                            const textNode = document.createTextNode(child.textContent || '');
+                            node.replaceChild(textNode, child);
+                        } else {
+                            Array.from(child.attributes).forEach(attr => child.removeAttribute(attr.name));
+                            cleanNode(child);
+                        }
+                    } else if (child.nodeType !== Node.TEXT_NODE) {
+                        node.removeChild(child);
+                    }
+                });
+            }
+
+            cleanNode(temp);
+            return temp.innerHTML;
+        }
+
+        function stripHTMLToText(html) {
+            if (!html) return '';
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            return temp.textContent || temp.innerText || '';
+        }
+
+        function applyTextFormat(command) {
+            const editor = document.getElementById('note-body-input');
+            editor.focus();
+            document.execCommand(command, false, null);
         }
 
         function formatDateTime(timestamp) {
@@ -891,6 +1190,27 @@
             const cat = getCategoryObj(note.category);
             const hasTitle = note.title && note.title.trim().length > 0;
             const dateLabel = formatDateTime(note.updatedAt || note.createdAt);
+            const safeBodyHTML = sanitizeRichHTML(note.body);
+            const photos = getNoteImages(note);
+
+            const thumbsHTML = photos.length > 0 ? `
+                <div class="mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar pt-0.5">
+                    ${photos.map((src, idx) => `
+                        <button type="button" data-photo-note-id="${note.id}" data-photo-idx="${idx}" title="Нажмите, чтобы увеличить фото"
+                            class="note-card-thumb shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-borderSubtle bg-bgElevated relative group/thumb focus:outline-none">
+                            <img src="${src}" alt="Фото ${idx + 1}" class="w-full h-full object-cover transition-transform duration-200 group-hover/thumb:scale-105">
+                            <span class="absolute bottom-1 right-1 w-5 h-5 rounded-md bg-black/55 text-textMain flex items-center justify-center">
+                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <polyline points="9 21 3 21 3 15"></polyline>
+                                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                                </svg>
+                            </span>
+                        </button>
+                    `).join('')}
+                </div>
+            ` : '';
 
             return `
                 <article data-id="${note.id}"
@@ -914,7 +1234,8 @@
                     </div>
 
                     ${hasTitle ? `<h3 class="text-base font-semibold text-textMain mb-1.5 leading-snug break-words">${escapeHTML(note.title)}</h3>` : ''}
-                    <p class="text-sm text-textMain/85 leading-relaxed whitespace-pre-line line-clamp-4 break-words">${escapeHTML(note.body)}</p>
+                    <div class="rich-text-content text-sm text-textMain/85 leading-relaxed line-clamp-4 break-words">${safeBodyHTML}</div>
+                    ${thumbsHTML}
                 </article>
             `;
         }
@@ -938,7 +1259,7 @@
 
                 if (!query) return true;
                 const inTitle = (note.title || '').toLowerCase().includes(query);
-                const inBody = (note.body || '').toLowerCase().includes(query);
+                const inBody = stripHTMLToText(note.body || '').toLowerCase().includes(query);
                 return inTitle || inBody;
             });
 
@@ -977,6 +1298,20 @@
             }
 
             notesList.innerHTML = regularNotes.map(createNoteCardHTML).join('');
+
+            // Клик по маленькой картинке в карточке открывает галерею фото побольше, не открывая редактор
+            document.querySelectorAll('.note-card-thumb').forEach(thumbBtn => {
+                thumbBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const noteId = thumbBtn.dataset.photoNoteId;
+                    const photoIdx = Number(thumbBtn.dataset.photoIdx) || 0;
+                    const note = state.notes.find(n => n.id === noteId);
+                    const photos = getNoteImages(note);
+                    if (photos.length > 0) {
+                        openPhotoLightbox(photos, photoIdx);
+                    }
+                });
+            });
 
             document.querySelectorAll('.note-card').forEach(card => {
                 card.addEventListener('click', () => {
@@ -1110,7 +1445,8 @@
                 if (!note) return;
 
                 titleInput.value = note.title || '';
-                bodyInput.value = note.body || '';
+                bodyInput.innerHTML = sanitizeRichHTML(note.body || '');
+                state.editorPhotos = [...getNoteImages(note)];
                 const catExists = state.categories.some(c => c.id === note.category);
                 state.editorCategory = catExists ? note.category : defaultCatId;
                 state.editorPinned = Boolean(note.pinned);
@@ -1122,7 +1458,8 @@
                 `;
             } else {
                 titleInput.value = '';
-                bodyInput.value = '';
+                bodyInput.innerHTML = '';
+                state.editorPhotos = [];
                 state.editorCategory = state.activeCategory !== 'all' ? state.activeCategory : defaultCatId;
                 state.editorPinned = false;
 
@@ -1130,6 +1467,7 @@
                 metaInfo.innerHTML = `<span>Новая запись • ${formatDateTime(Date.now())}</span>`;
             }
 
+            updateEditorPhotoUI();
             renderEditorCategories();
             updatePinButtonUI();
 
@@ -1146,48 +1484,60 @@
             modal.classList.remove('active');
             document.body.style.overflow = '';
             state.editingNoteId = null;
+            state.editorPhotos = [];
         }
 
         function saveCurrentNote() {
             const title = document.getElementById('note-title-input').value.trim();
-            const body = document.getElementById('note-body-input').value.trim();
+            const bodyEditor = document.getElementById('note-body-input');
+            const sanitizedBody = sanitizeRichHTML(bodyEditor.innerHTML).trim();
+            const plainText = stripHTMLToText(sanitizedBody).trim();
 
-            if (!title && !body) {
-                showToast('Введите текст заметки перед сохранением');
-                document.getElementById('note-body-input').focus();
+            if (!title && !plainText && state.editorPhotos.length === 0) {
+                showToast('Введите текст или добавьте фото перед сохранением');
+                bodyEditor.focus();
                 return;
             }
 
             const now = Date.now();
+            const previousNotes = [...state.notes];
+            const savedImages = [...state.editorPhotos];
 
             if (state.editingNoteId) {
                 const index = state.notes.findIndex(n => n.id === state.editingNoteId);
                 if (index !== -1) {
-                    state.notes[index] = {
+                    const updatedNote = {
                         ...state.notes[index],
                         title,
-                        body,
+                        body: sanitizedBody,
+                        images: savedImages,
                         category: state.editorCategory,
                         pinned: state.editorPinned,
                         updatedAt: now
                     };
+                    delete updatedNote.image;
+                    state.notes[index] = updatedNote;
                 }
-                showToast('Изменения сохранены');
             } else {
                 const newNote = {
                     id: 'note-' + now + '-' + Math.random().toString(36).substring(2, 7),
                     title,
-                    body,
+                    body: sanitizedBody,
+                    images: savedImages,
                     category: state.editorCategory,
                     pinned: state.editorPinned,
                     createdAt: now,
                     updatedAt: now
                 };
                 state.notes.unshift(newNote);
-                showToast('Заметка добавлена');
             }
 
-            saveNotes();
+            if (!saveNotes()) {
+                state.notes = previousNotes;
+                return;
+            }
+
+            showToast(state.editingNoteId ? 'Изменения сохранены' : 'Заметка добавлена');
             renderCategoryTabs();
             renderNotes();
             closeEditor();
@@ -1234,7 +1584,7 @@
         function exportToJSON() {
             const payload = {
                 app: 'CalmNotesPWA',
-                version: 2,
+                version: 3,
                 exportedAt: new Date().toISOString(),
                 categories: state.categories,
                 notes: state.notes
@@ -1270,7 +1620,6 @@
                         throw new Error('Неверный формат файла');
                     }
 
-                    // Если в файле сохранены пользовательские категории, восстанавливаем их
                     if (Array.isArray(parsed.categories)) {
                         const existingCatIds = new Set(state.categories.map(c => c.id));
                         parsed.categories.forEach(c => {
@@ -1293,7 +1642,8 @@
                     let addedCount = 0;
 
                     importedNotes.forEach(item => {
-                        if (item && (item.body || item.title)) {
+                        const importedImages = getNoteImages(item);
+                        if (item && (item.body || item.title || importedImages.length > 0)) {
                             const id = item.id && !existingIds.has(item.id)
                                 ? item.id
                                 : 'imp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
@@ -1301,7 +1651,8 @@
                             state.notes.push({
                                 id,
                                 title: String(item.title || ''),
-                                body: String(item.body || ''),
+                                body: sanitizeRichHTML(String(item.body || '')),
+                                images: importedImages,
                                 category: state.categories.some(c => c.id === item.category) ? item.category : defaultCatId,
                                 pinned: Boolean(item.pinned),
                                 createdAt: Number(item.createdAt) || Date.now(),
@@ -1355,6 +1706,49 @@
             document.getElementById('btn-toggle-pin').addEventListener('click', () => {
                 state.editorPinned = !state.editorPinned;
                 updatePinButtonUI();
+            });
+
+            // Кнопки форматирования текста (preventDefault на mousedown сохраняет выделение текста)
+            [
+                { id: 'btn-format-bold', cmd: 'bold' },
+                { id: 'btn-format-italic', cmd: 'italic' },
+                { id: 'btn-format-underline', cmd: 'underline' }
+            ].forEach(({ id, cmd }) => {
+                const btn = document.getElementById(id);
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    applyTextFormat(cmd);
+                });
+            });
+
+            // Вставка чистого текста при Ctrl+V в редактор (без лишних чужих стилей с сайтов)
+            document.getElementById('note-body-input').addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text);
+            });
+
+            // Добавление фото в редакторе
+            document.getElementById('note-photo-input').addEventListener('change', handlePhotoUpload);
+
+            // Управление полноэкранным просмотром фото (закрытие и перелистывание)
+            document.getElementById('btn-close-lightbox').addEventListener('click', closePhotoLightbox);
+            document.getElementById('btn-lightbox-prev').addEventListener('click', (e) => {
+                e.stopPropagation();
+                stepPhotoLightbox(-1);
+            });
+            document.getElementById('btn-lightbox-next').addEventListener('click', (e) => {
+                e.stopPropagation();
+                stepPhotoLightbox(1);
+            });
+            document.getElementById('photo-lightbox-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'photo-lightbox-modal') closePhotoLightbox();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (!document.getElementById('photo-lightbox-modal').classList.contains('active')) return;
+                if (e.key === 'Escape') closePhotoLightbox();
+                if (e.key === 'ArrowLeft') stepPhotoLightbox(-1);
+                if (e.key === 'ArrowRight') stepPhotoLightbox(1);
             });
 
             // Добавление новой категории из редактора
