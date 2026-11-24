@@ -298,7 +298,7 @@
     <div id="editor-modal" class="modal-backdrop fixed inset-0 z-40 bg-black/65 backdrop-blur-xs flex items-end sm:items-center justify-center">
         <div class="modal-sheet w-full max-w-xl bg-bgElevated border-t sm:border border-borderSubtle rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl safe-bottom">
             <!-- Верхняя панель редактора -->
-            <div class="flex items-center justify-between px-4 py-3.5 border-b border-borderSubtle/70">
+            <div class="flex items-center justify-between px-4 py-3.5 border-b border-borderSubtle/70 shrink-0">
                 <button id="btn-close-editor" type="button" class="p-2 -ml-2 rounded-xl text-textMuted hover:text-textMain active:scale-95 transition-all">
                     <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -333,9 +333,9 @@
             </div>
 
             <!-- Тело редактора -->
-            <div class="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
+            <div class="px-4 sm:px-5 pb-4 sm:pb-5 overflow-y-auto flex-1 space-y-4">
                 <!-- Выбор и добавление категории -->
-                <div>
+                <div class="pt-4">
                     <div class="flex items-center justify-between mb-2">
                         <label class="block text-xs font-medium text-textMuted">Категория</label>
                         <span class="text-[11px] text-textMuted/75">Нажмите × на теге, чтобы удалить</span>
@@ -364,34 +364,36 @@
                         class="w-full bg-transparent text-lg font-semibold text-textMain placeholder-textMuted/55 focus:outline-none border-b border-borderSubtle/60 pb-2 focus:border-accentOrange transition-colors">
                 </div>
 
-                <!-- Панель форматирования текста и добавления фото -->
-                <div class="flex items-center justify-between gap-2 bg-bgCard/90 border border-borderSubtle/80 rounded-xl px-2 py-1.5">
-                    <div class="flex items-center gap-1">
-                        <button type="button" id="btn-format-bold" title="Жирный (Ctrl+B)"
-                            class="w-9 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-textMain hover:bg-bgCardHover active:scale-95 transition-all">
-                            B
-                        </button>
-                        <button type="button" id="btn-format-italic" title="Курсив (Ctrl+I)"
-                            class="w-9 h-8 rounded-lg flex items-center justify-center text-sm italic font-serif text-textMain hover:bg-bgCardHover active:scale-95 transition-all">
-                            I
-                        </button>
-                        <button type="button" id="btn-format-underline" title="Подчёркнутый (Ctrl+U)"
-                            class="w-9 h-8 rounded-lg flex items-center justify-center text-sm underline underline-offset-2 text-textMain hover:bg-bgCardHover active:scale-95 transition-all">
-                            U
-                        </button>
-                    </div>
+                <!-- Панель форматирования текста и добавления фото (всегда закреплена сверху при скроллинге текста) -->
+                <div class="sticky top-0 z-10 -mx-4 sm:-mx-5 px-4 sm:px-5 py-2 bg-bgElevated/95 backdrop-blur-md">
+                    <div class="flex items-center justify-between gap-2 bg-bgCard border border-borderSubtle/90 rounded-xl px-2 py-1.5 shadow-md">
+                        <div class="flex items-center gap-1">
+                            <button type="button" id="btn-format-bold" title="Жирный (Ctrl+B)"
+                                class="w-9 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-textMain hover:bg-bgCardHover active:scale-95 transition-all">
+                                B
+                            </button>
+                            <button type="button" id="btn-format-italic" title="Курсив (Ctrl+I)"
+                                class="w-9 h-8 rounded-lg flex items-center justify-center text-sm italic font-serif text-textMain hover:bg-bgCardHover active:scale-95 transition-all">
+                                I
+                            </button>
+                            <button type="button" id="btn-format-underline" title="Подчёркнутый (Ctrl+U)"
+                                class="w-9 h-8 rounded-lg flex items-center justify-center text-sm underline underline-offset-2 text-textMain hover:bg-bgCardHover active:scale-95 transition-all">
+                                U
+                            </button>
+                        </div>
 
-                    <!-- Кнопка прикрепления одного или нескольких фото -->
-                    <label for="note-photo-input"
-                        class="cursor-pointer px-3 py-1.5 rounded-lg bg-accentTeal/30 hover:bg-accentTeal/45 border border-accentTeal/60 text-accentPeach text-xs font-medium flex items-center gap-1.5 active:scale-95 transition-all">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
-                        <span>Фото</span>
-                    </label>
-                    <input id="note-photo-input" type="file" accept="image/*" multiple class="hidden">
+                        <!-- Кнопка прикрепления одного или нескольких фото -->
+                        <label for="note-photo-input"
+                            class="cursor-pointer px-3 py-1.5 rounded-lg bg-accentTeal/30 hover:bg-accentTeal/45 border border-accentTeal/60 text-accentPeach text-xs font-medium flex items-center gap-1.5 active:scale-95 transition-all">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <span>Фото</span>
+                        </label>
+                        <input id="note-photo-input" type="file" accept="image/*" multiple class="hidden">
+                    </div>
                 </div>
 
                 <!-- Предпросмотр прикреплённых фото в редакторе -->
