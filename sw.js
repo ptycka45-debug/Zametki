@@ -1,4 +1,4 @@
-const CACHE_NAME = 'warm-notes-pwa-v3';
+const CACHE_NAME = 'warm-notes-pwa-v4';
 
 const ASSETS_TO_CACHE = [
   './',
